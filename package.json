@@ -1,6 +1,6 @@
 {
-  "name": "profile",
-  "version": "0.0.0",
+  "name": "birds_lovers",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -20,6 +20,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",
+    "http-proxy-middleware": "^3.0.3",
+    "prettier": "^3.4.1",
     "sass": "^1.63.6",
     "unplugin-auto-import": "^0.16.4",
     "unplugin-vue-components": "^0.25.1",
