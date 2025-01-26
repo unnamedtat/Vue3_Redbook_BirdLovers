@@ -13,6 +13,8 @@
 
  <img alt="预览图5" src="assets/5.png" width="600" />
 
+示例投稿数据均来自网络。
+
 ## 🌟 组件优化
 - 重构 cardDetail 样式，使用 SCSS和计算样式。
 - 封装全局cardDetail、backPage、cardSkeleton 插件。
