@@ -1,12 +1,12 @@
 <script setup>
-import {useRouter} from "vue-router";
-import {useUserStore} from "@/stores/user.js";
-import {computed, onBeforeMount, ref} from "vue";
-import {Back, Plus} from '@element-plus/icons-vue'
-import {ElMessage} from "element-plus";
-import CardDetail from "@/components/cardDetail.vue";
-import {getCurrentTime} from "@/utils/getTime";
-import {uploadPost} from "@/apis/main";
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/useUserStore.js'
+import { computed, onBeforeMount, ref } from 'vue'
+import { Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import {uploadPost, uploadPostInfo} from '@/apis/main'
+import { getCurrentTime } from '@/utils/getTime'
+import throttle from "@/utils/throttle";
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -19,243 +19,222 @@ const checkLogin = () => {
 onBeforeMount(() => checkLogin())
 
 const fileList = ref([])
-const fileListUrl = computed(() => fileList.value.map(item => item.url))
+const fileListUrl = computed(() => fileList.value.map((item) => item.url))
 const title = ref('')
 const content = ref('')
 const dialogImageUrl = ref('')
 const dialogVisible = ref(false)
-const postData = ref({})
 const Post = ref({})
 const PostId = ref(0)
+const currentTime = getCurrentTime()
 
 const handlePictureCardPreview = (uploadFile) => {
   dialogImageUrl.value = uploadFile.url
   dialogVisible.value = true
   return true
 }
-const onError = async (error) => {
-  ElMessage({
-    type: 'warning',
-    message: '图片上传失败'
-  })
-  const userStore = useUserStore();
-  await userStore.userLogout()
-  await router.replace('/')
-}
+
 const handleChange = (uploadFile, uploadFiles) => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif']; // 可接受的图片类型
-  const maxSize = 2; // 最大文件大小，单位：MB
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'] // 可接受的图片类型
+  const maxSize = 2 // 最大文件大小，单位：MB
   if (!allowedTypes.includes(uploadFile.raw.type)) {
-    ElMessage.error('请上传正确的图片文件!');
-    upload.value.handleRemove(uploadFile);
-    return false;
+    ElMessage.error('请上传正确的图片文件!')
+    upload.value.handleRemove(uploadFile)
+    return false
   } else if (uploadFile.raw.size / 1024 / 1024 > maxSize) {
-    ElMessage.error(`文件大小最多${maxSize}MB!`);
-    upload.value.handleRemove(uploadFile);
-    return false;
+    ElMessage.error(`文件大小最多${maxSize}MB!`)
+    upload.value.handleRemove(uploadFile)
+    return false
   }
 
-  return true;
+  return true
 }
 const upload = ref(null)
-const beforeUpload = (rawFile) => {
-  Post.value = {
-    id: PostId.value
-  }
-}
 const doUploads = async () => {
   if (fileListUrl.value.length === 0) {
-    ElMessage.warning(
-        '请至少上传一张图片!'
-    )
+    ElMessage.warning('请至少上传一张图片!')
     return
   }
   if (title.value === '') {
-    ElMessage.warning(
-        '请输入标题'
-    )
+    ElMessage.warning('请输入标题')
     return
   }
   const data = {
     title: title.value,
     content: content.value,
-    user_id: userStore.userInfo.id,
+    user_id: userStore.userInfo.id
   }
-  const res = await uploadPost(data)
+  const res = await uploadPostInfo(data)
   PostId.value = res.info
-  upload.value.submit()
-  ElMessage({type: 'success', message: '发布成功，3秒后跳转到主页'})
+  await upload.value.submit()
+  ElMessage({ type: 'success', message: '发布成功，5秒后跳转到主页' })
   setTimeout(() => {
     router.replace('/')
-  }, 3000)
-
+  }, 5000)
 }
 const handleExceed = () => {
-  ElMessage.warning(
-      '最多可以添加9张图片哦!'
-  )
+  ElMessage.warning('最多可以添加9张图片哦!')
 }
-// 制作预览页面
-const show = ref(false)
-const close = () => {
-  show.value = false
-}
-const MakePrev = () => {
-  if (fileListUrl.value.length === 0) {
-    ElMessage.warning(
-        '请至少上传一张图片!'
-    )
-    return
-  }
-  if (title.value === '') {
-    ElMessage.warning(
-        '请输入标题'
-    )
-    return
-  }
-  postData.value = {
-    id: 1,
-    title: title.value,
-    content: content.value,
-    user: userStore.userInfo,
-    imgs: fileListUrl.value,
-    createTime: getCurrentTime()
-  }
-  show.value = true
-}
-const empty = []
+
+const handleUploadPost =throttle( (option) => {
+  const formData = new FormData()
+  fileList.value.forEach((file, index) => {
+    formData.append('files[]', file.raw);
+  });
+  formData.append('id',PostId.value)
+  uploadPost({formData}).then((res)=>console.log(res))
+},5000)
 </script>
 
 <template>
-  <el-row :gutter="50">
-    <el-col :span="500">
-      <div class="leftArea">
-        <h1 style="text-align: center">上传图片</h1>
-        <div class="img-container">
-          <el-upload
+  <div class="content-container">
+    <div class="content">
+      <el-row>
+        <div class="img-editor">
+          <h2>上传图片</h2>
+          <div class="img-container">
+            <el-upload
               v-model:file-list="fileList"
-              action="http://localhost:8000/upload/"
-              class="preview"
+              action=""
+              :http-request="handleUploadPost"
+              class="preview-upload"
               ref="upload"
               list-type="picture-card"
               multiple
-              :headers="userStore.headersObj"
               :limit="9"
               :on-preview="handlePictureCardPreview"
               :on-change="handleChange"
               :auto-upload="false"
               :on-exceed="handleExceed"
-              :data="Post"
-              :before-upload="beforeUpload"
-              :on-error="onError"
-          >
-            <el-icon>
-              <Plus/>
-            </el-icon>
-          </el-upload>
+            >
+              <el-icon>
+                <Plus />
+              </el-icon>
+            </el-upload>
+          </div>
         </div>
-      </div>
-    </el-col>
-    <el-col :span="500">
-      <div class="rightArea">
-        <h1 style="text-align: center">内容区</h1>
-        <div class="content-container">
-          <el-input
+      </el-row>
+      <el-row>
+        <div class="content-edit">
+          <h2>内容区</h2>
+          <div>
+            <el-input
               v-model="title"
               maxlength="20"
               placeholder="请输入标题"
               show-word-limit
               type="text"
-              style="margin-top: 20px;width: 80%;margin-left: 50px;"
-          />
-          <div style="margin: 50px 0"/>
-          <el-input
+            />
+            <el-input
               v-model="content"
               maxlength="3000"
               placeholder="请输入内容"
               show-word-limit
               type="textarea"
-              style="width: 80%;margin-left: 50px;"
-              autosize
-          />
+              :rows="15"
+            />
+          </div>
         </div>
+      </el-row>
+      <el-row>
+        <el-button type="primary" size="large" @click="doUploads">发布推文</el-button>
+      </el-row>
+    </div>
+    <div class="preview-content">
+      <div class="preview-user-info">
+        <el-avatar :src="userStore.userInfo.avatar" size="small" />
+        <span>{{ userStore.userInfo.username }}</span>
       </div>
-    </el-col>
-    <el-col :span="50">
-      <el-button style="margin-top: 150px;color:white;" round color="#fd5656" size="large" @click="doUploads">发布推文
-      </el-button>
-      <br>
-      <el-button style="margin-top: 200px;" round type="primary" size="large" @click="MakePrev">生成预览</el-button>
-    </el-col>
-  </el-row>
-
-
-  <el-dialog v-model="dialogVisible">
-    <img :src="dialogImageUrl" alt="Preview Image"/>
-  </el-dialog>
-
-  <div class="overlay" v-if="show">
-    <button class="backPage" @click="close">
-      <el-icon>
-        <Back/>
-      </el-icon>
-    </button>
-    <card-detail :detail="postData" :comments="empty" :review="true"/>
+      <el-carousel style="background-color: black">
+        <el-carousel-item v-for="item in fileListUrl" :key="item" height="120px">
+          <img :src="item" style="height: 100%; width: 100%; object-fit: contain" alt="" />
+        </el-carousel-item>
+      </el-carousel>
+      <div class="preview-text-title">{{ title ? title : '标题' }}</div>
+      <div class="preview-text-content">{{ content ? content : '内容' }}</div>
+      <time class="time">{{ currentTime }}</time>
+      <hr />
+      <el-empty description="现在还没有评论"></el-empty>
+    </div>
   </div>
+  <el-dialog v-model="dialogVisible">
+    <img :src="dialogImageUrl" alt="Preview Image" />
+  </el-dialog>
 </template>
 
-<style scoped>
-.leftArea {
-  margin-left: 50px;
-  width: 515px;
+<style scoped lang="scss">
+.img-editor {
+  :deep(.el-upload--picture-card),
+  :deep(.el-upload-list--picture-card .el-upload-list__item) {
+    width: 6rem;
+    height: 6rem;
+  }
+  .preview-upload {
+    margin: 1.6rem;
+  }
 }
-
-.rightArea {
-  margin-left: 50px;
-  width: 515px;
-}
-
-.img-container {
-  border-radius: 20px;
-  border: #2c3e50 1px solid;
-  width: 515px;
-  height: 500px;
-  overflow: scroll;
-}
-
-.content-container {
-  border-radius: 20px;
-  border: #2c3e50 1px solid;
-  width: 515px;
-  height: 500px;
-  overflow: scroll;
-}
-
-.preview {
-  margin: 22px;
-}
-
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
+.content-edit {
   width: 100%;
-  height: 100%;
-  background-color: white; /* 设置透明度的背景色 */
-  z-index: 9999; /* 设置一个较大的z-index值，确保图层位于其他内容之上 */
+  .el-input {
+    width: 30%;
+    margin: 1rem 0 1rem 1.5rem;
+  }
+  .el-textarea {
+    width: 90%;
+    margin: 0 0 1rem 1.5rem;
+  }
 }
-
-.backPage {
-  position: fixed;
-  top: 5%;
-  left: 3%;
-  justify-content: center;
-  align-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 40px;
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: all .3s;
+.el-row {
+  h2 {
+    font-size: 1.2rem;
+    margin-left: 1.5rem;
+  }
+  .el-button {
+    margin-left: 1.5rem;
+  }
+}
+.content-container {
+  display: flex;
+  .preview-content {
+    margin: 1rem;
+    width: 18rem;
+    height: 100%;
+    .preview-user-info {
+      display: flex;
+      align-items: center;
+    }
+    .preview-text-title {
+      font-weight: bold;
+    }
+    .preview-text-content {
+      overflow-x: scroll;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      //white-space: pre-wrap;
+      //overflow-wrap: break-word;
+    }
+    .time {
+      font-size: 0.8rem;
+      color: var(--el-text-color-secondary);
+    }
+  }
+  .content {
+    border-right: var(--el-text-color-secondary) 2px dashed;
+    flex: 1;
+  }
+}
+.el-dialog {
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+@media screen and (max-width: 768px) {
+  .preview-content {
+    display: none;
+  }
+  .content-container .content {
+    border-right: none;
+  }
 }
 </style>
