@@ -37,7 +37,7 @@ npm run build
 npm run dev
 ```
 
-##### 原作者个人博客
+## 原作者个人博客
 [回锅炒辣椒的个人博客](https://www.xsblog.site/)
 
 ## 后端代码仓库
