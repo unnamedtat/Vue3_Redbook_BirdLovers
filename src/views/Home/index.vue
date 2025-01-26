@@ -1,26 +1,38 @@
 <script setup>
-
+import headNav from '@/views/Home/components/headNav.vue'
+import asideNav from '@/views/Home/components/asideNav.vue'
 </script>
 
 <template>
-  <el-container>
+  <el-container class="container">
     <el-header>
-      <head-nav/>
+      <head-nav />
     </el-header>
-    <el-container>
-      <el-aside width="80px">
-        <aside-nav/>
+    <el-container class="content-container">
+      <el-aside>
+        <aside-nav />
       </el-aside>
-      <el-main class="maxSize" id="content">
-        <RouterView :key="$route.fullPath"/>
+      <el-main>
+        <RouterView />
       </el-main>
     </el-container>
   </el-container>
 </template>
 
-<style scoped>
-.maxSize {
-  height: 700px;
-  overflow-y: scroll;
+<style scoped lang="scss">
+.el-container {
+  height: 100vh;
+  width: 100vw;
+  .el-header {
+    height: $header-height;
+  }
+  .el-main {
+    flex: 1;
+    overflow-y: scroll;
+  }
+  .el-aside {
+    height: calc(100vh - $header-height);
+    width: auto !important;
+  }
 }
 </style>
