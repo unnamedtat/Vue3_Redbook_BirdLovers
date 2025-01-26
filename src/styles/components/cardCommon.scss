@@ -1,0 +1,30 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.pop-transition-enter-active {
+  animation: scale-up-center 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.pop-transition-leave-active {
+  animation: scale-up-center 0.3s ease-out both reverse;
+}
+
+@keyframes scale-up-center {
+  0% {
+    transform: scale(0.5);
+    transform-origin: var(--overlay-x) var(--overlay-y);
+  }
+  10% {
+    transform: scale(0.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
