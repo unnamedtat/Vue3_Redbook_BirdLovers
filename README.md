@@ -13,6 +13,10 @@
 
  <img alt="预览图5" src="assets/5.png" width="600" />
 
+ <img alt="预览图6" src="assets/6.png" width="600" />
+
+![预览图7](https://github.com/unnamedtat/Vue3_Redbook_BirdLovers/blob/main/assets/7.gif)
+
 示例投稿数据均来自网络。
 
 ## 🌟 组件优化
